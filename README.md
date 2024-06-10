@@ -4,7 +4,10 @@
 
 This is Chrome extension that allows you to **edit your last sent message** on WhatsApp's web app by pressing the **Up Arrow key** when the focus is on the message input field.
 
+The extension does not collect or transmit any user data.
 
-## 📝 License
+The code has no dependencies and does not use any third-party libraries.
+
+## License
 
 [MIT](https://github.com/valentincostam/up-arrow-edit-last-message/blob/main/LICENSE) © [Valentín Costa](https://valentincosta.com)
