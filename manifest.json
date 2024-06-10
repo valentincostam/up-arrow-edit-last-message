@@ -7,7 +7,7 @@
   "default_locale": "en",
   "content_scripts": [
     {
-      "matches": ["https://*.web.whatsapp.com/*"],
+      "matches": ["https://web.whatsapp.com/*"],
       "js": ["index.js"]
     }
   ],
