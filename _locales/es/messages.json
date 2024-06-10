@@ -1,0 +1,20 @@
+{
+  "contextMenu": {
+    "message": "Menú contextual"
+  },
+  "edit": {
+    "message": "Editar"
+  },
+  "editTimeLimitErrorMessage": {
+    "message": "Sólo puedes editar mensajes enviados en los últimos 15 minutos"
+  },
+  "extensionName": {
+    "message": "Flecha Arriba para Editar el Último Mensaje en WhatsApp"
+  },
+  "poll": {
+    "message": "Encuesta"
+  },
+  "you": {
+    "message": "Tú"
+  }
+}
