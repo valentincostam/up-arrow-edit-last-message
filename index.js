@@ -118,9 +118,7 @@ const isMessageEditable = (messageBubble) => {
   if ((!wasSent && !wasDelivered) || wasForwarded || isPoll) return false;
 
   const messagePrePlainText = messageContainer.dataset.prePlainText;
-  console.log("👉  messagePrePlainText:", messagePrePlainText);
   const messageDateTime = getDateFromString(messagePrePlainText);
-  console.log("👉  messageDateTime:", messageDateTime);
   const currentDateTime = new Date();
   const elapsedTime = currentDateTime - messageDateTime;
   const isRecent = elapsedTime <= 15 * 60 * 1000; // Fifteen minutes in milliseconds.
