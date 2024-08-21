@@ -8,21 +8,21 @@
 function getElementWhenExists(selector) {
   return new Promise((resolve) => {
     if (document.querySelector(selector)) {
-      return resolve(document.querySelector(selector))
+      return resolve(document.querySelector(selector));
     }
 
     const observer = new MutationObserver(() => {
       if (document.querySelector(selector)) {
-        resolve(document.querySelector(selector))
-        observer.disconnect()
+        resolve(document.querySelector(selector));
+        observer.disconnect();
       }
-    })
+    });
 
     observer.observe(document.body, {
       subtree: true,
       childList: true,
-    })
-  })
+    });
+  });
 }
 
 /**
@@ -34,21 +34,21 @@ function getElementWhenExists(selector) {
 function waitForElementToDisappear(selector) {
   return new Promise((resolve) => {
     if (!document.querySelector(selector)) {
-      return resolve()
+      return resolve();
     }
 
     const observer = new MutationObserver(() => {
       if (!document.querySelector(selector)) {
-        resolve()
-        observer.disconnect()
+        resolve();
+        observer.disconnect();
       }
-    })
+    });
 
     observer.observe(document.body, {
       subtree: true,
       childList: true,
-    })
-  })
+    });
+  });
 }
 
 /**
@@ -58,27 +58,33 @@ function waitForElementToDisappear(selector) {
  * @returns {Date|undefined} - The parsed Date object, or undefined if the string does not match the expected format.
  */
 function getDateFromString(string) {
-  const dateTimeRegex = /\[(\d{1,2}:\d{2}), (\d{1,2}\/\d{1,2}\/\d{4})\]/
-  const matches = dateTimeRegex.exec(string)
+  const dateTimeRegex =
+    /\[(\d{1,2}:\d{2})(?:\s*(a\.?m\.?|p\.?m\.?))?, (\d{1,2}\/\d{1,2}\/\d{4})\]/i;
+  const matches = dateTimeRegex.exec(string.replace(/&nbsp;/g, " "));
 
-  if (!matches || matches.length !== 3) return
+  if (!matches || matches.length < 3) return;
 
-  const timePart = matches[1]
-  const datePart = matches[2]
+  const timePart = matches[1].trim();
+  const ampm = matches[2] ? matches[2].replace(/\s/g, "").toLowerCase() : null;
+  const datePart = matches[3];
 
-  let day, month, year
+  let day, month, year;
 
-  if (chrome.i18n.getUILanguage().startsWith('es')) {
-    ;[day, month, year] = datePart.split('/').map(Number)
+  if (chrome.i18n.getUILanguage().startsWith("es")) {
+    [day, month, year] = datePart.split("/").map(Number);
   } else {
-    ;[month, day, year] = datePart.split('/').map(Number)
+    [month, day, year] = datePart.split("/").map(Number);
   }
 
-  let [hours, minutes] = timePart.split(':').map(Number)
+  let [hours, minutes] = timePart.split(":").map(Number);
 
-  hours = hours === 24 ? 0 : hours
+  if (ampm === "pm" && hours < 12) {
+    hours += 12;
+  } else if (ampm === "am" && hours === 12) {
+    hours = 0;
+  }
 
-  return new Date(year, month - 1, day, hours, minutes)
+  return new Date(year, month - 1, day, hours, minutes);
 }
 
 /**
@@ -88,74 +94,100 @@ function getDateFromString(string) {
  * @returns {boolean} - Returns true if the message bubble is editable, false otherwise.
  */
 const isMessageEditable = (messageBubble) => {
-  const messageContainer = messageBubble.querySelector('.copyable-text[data-pre-plain-text]')
+  const messageContainer = messageBubble.querySelector(
+    ".copyable-text[data-pre-plain-text]"
+  );
 
-  if (!messageContainer) return false
+  if (!messageContainer) return false;
 
-  const isPoll = Boolean(messageBubble.querySelector(`[aria-label*='${chrome.i18n.getMessage("poll")}' i]`))
-  const wasSent = Boolean(messageBubble.querySelector("[data-icon='msg-check']"))
-  const wasForwarded = Boolean(messageBubble.querySelector("[data-icon='forwarded']"))
-  const wasDelivered = Boolean(messageBubble.querySelector("[data-icon='msg-dblcheck']"))
+  const isPoll = Boolean(
+    messageBubble.querySelector(
+      `[aria-label*='${chrome.i18n.getMessage("poll")}' i]`
+    )
+  );
+  const wasSent = Boolean(
+    messageBubble.querySelector("[data-icon='msg-check']")
+  );
+  const wasForwarded = Boolean(
+    messageBubble.querySelector("[data-icon='forwarded']")
+  );
+  const wasDelivered = Boolean(
+    messageBubble.querySelector("[data-icon='msg-dblcheck']")
+  );
 
-  if ((!wasSent && !wasDelivered) || wasForwarded || isPoll) return false
+  if ((!wasSent && !wasDelivered) || wasForwarded || isPoll) return false;
 
-  const messagePrePlainText = messageContainer.dataset.prePlainText
-  const messageDateTime = getDateFromString(messagePrePlainText)
-  const currentDateTime = new Date()
-  const elapsedTime = currentDateTime - messageDateTime
-  const isRecent = elapsedTime <= 15 * 60 * 1000 // Fifteen minutes in milliseconds.
+  const messagePrePlainText = messageContainer.dataset.prePlainText;
+  console.log("👉  messagePrePlainText:", messagePrePlainText);
+  const messageDateTime = getDateFromString(messagePrePlainText);
+  console.log("👉  messageDateTime:", messageDateTime);
+  const currentDateTime = new Date();
+  const elapsedTime = currentDateTime - messageDateTime;
+  const isRecent = elapsedTime <= 15 * 60 * 1000; // Fifteen minutes in milliseconds.
 
   if (!isRecent) {
-    alert(chrome.i18n.getMessage("editTimeLimitErrorMessage"))
-    return false
+    alert(chrome.i18n.getMessage("editTimeLimitErrorMessage"));
+    return false;
   }
 
-  return true
-}
+  return true;
+};
 
 /**
  * Handles the key up event. If the ArrowUp key is pressed, the popup to edit last sent message is shown.
  * If the last sent message is not editable, an alert is shown.
- * 
+ *
  * @param {Event} event - The key up event object.
  * @returns {Promise<void>} - A promise that resolves when the function completes.
  */
 const handleKeyUp = async (event) => {
-  if (event.key !== 'ArrowUp') return false
+  if (event.key !== "ArrowUp") return false;
 
-  const messageInputField = document.querySelector("#main [role='textbox']")
+  const messageInputField = document.querySelector("#main [role='textbox']");
 
-  const isMessageInputFieldEventTarget = messageInputField === event.target
-  const isMessageInputFieldFocused = messageInputField === document.activeElement
-  const isMessageInputFieldEmpty = messageInputField.innerText.trim() === ""
+  const isMessageInputFieldEventTarget = messageInputField === event.target;
+  const isMessageInputFieldFocused =
+    messageInputField === document.activeElement;
+  const isMessageInputFieldEmpty = messageInputField.innerText.trim() === "";
 
-  if (!isMessageInputFieldEventTarget || !isMessageInputFieldFocused || !isMessageInputFieldEmpty) return
+  if (
+    !isMessageInputFieldEventTarget ||
+    !isMessageInputFieldFocused ||
+    !isMessageInputFieldEmpty
+  )
+    return;
 
-  const lastSentMessage = [...document.querySelectorAll('.message-out')].at(-1)
+  const lastSentMessage = [...document.querySelectorAll(".message-out")].at(-1);
 
-  const messageBubble = lastSentMessage.querySelector(`[aria-label='${chrome.i18n.getMessage("you")}:' i]`)?.parentElement
+  const messageBubble = lastSentMessage.querySelector(
+    `[aria-label='${chrome.i18n.getMessage("you")}:' i]`
+  )?.parentElement;
 
-  if (!isMessageEditable(messageBubble)) return
+  if (!isMessageEditable(messageBubble)) return;
 
-  messageBubble.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+  messageBubble.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
 
-  const contextMenuButton = await getElementWhenExists(`[aria-label='${chrome.i18n.getMessage("contextMenu")}' i]`)
+  const contextMenuButton = await getElementWhenExists(
+    `[aria-label='${chrome.i18n.getMessage("contextMenu")}' i]`
+  );
 
-  contextMenuButton.click()
+  contextMenuButton.click();
 
-  const editButton = await getElementWhenExists(`[aria-label='${chrome.i18n.getMessage("edit")}' i]`)
+  const editButton = await getElementWhenExists(
+    `[aria-label='${chrome.i18n.getMessage("edit")}' i]`
+  );
 
-  editButton.click()
+  editButton.click();
 
-  const editTextField = await getElementWhenExists("[role='textbox']")
+  const editTextField = await getElementWhenExists("[role='textbox']");
 
-  editTextField.focus()
+  editTextField.focus();
 
-  await waitForElementToDisappear("[data-animate-modal-popup='true']")
+  await waitForElementToDisappear("[data-animate-modal-popup='true']");
 
-  lastSentMessage.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
+  lastSentMessage.dispatchEvent(new MouseEvent("mouseout", { bubbles: true }));
 
-  messageInputField.focus()
-}
+  messageInputField.focus();
+};
 
-document.addEventListener('keyup', handleKeyUp)
+document.addEventListener("keyup", handleKeyUp);

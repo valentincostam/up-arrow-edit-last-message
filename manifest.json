@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "0.0.2",
-  "description": "Edit your last message on WhatsApp by pressing the Up Arrow key.",
+  "version": "0.0.3",
+  "description": "Edit your last message on WA Web app by pressing the Up Arrow key.",
   "author": "valentincostadev@gmail.com",
   "default_locale": "en",
   "content_scripts": [
