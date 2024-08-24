@@ -3,25 +3,29 @@
  * when it becomes available in the DOM.
  *
  * @param {string} selector - The CSS selector to match the desired element.
+ * @param {HTMLElement} parentElement - The parent element to search within.
  * @returns {Promise<Element>} A promise that resolves with the element when it exists in the DOM.
  */
-function getElementWhenExists(selector) {
+function getElementWhenExists(selector, parentElement = document) {
   return new Promise((resolve) => {
-    if (document.querySelector(selector)) {
-      return resolve(document.querySelector(selector));
+    if (parentElement.querySelector(selector)) {
+      return resolve(parentElement.querySelector(selector));
     }
 
     const observer = new MutationObserver(() => {
-      if (document.querySelector(selector)) {
-        resolve(document.querySelector(selector));
+      if (parentElement.querySelector(selector)) {
+        resolve(parentElement.querySelector(selector));
         observer.disconnect();
       }
     });
 
-    observer.observe(document.body, {
-      subtree: true,
-      childList: true,
-    });
+    observer.observe(
+      parentElement === document ? document.body : parentElement,
+      {
+        subtree: true,
+        childList: true,
+      }
+    );
   });
 }
 
@@ -58,14 +62,23 @@ function waitForElementToDisappear(selector) {
  * @returns {Date|undefined} - The parsed Date object, or undefined if the string does not match the expected format.
  */
 function getDateFromString(string) {
+  // This regex matches date-time strings in the following formats:
+  // [10:30 AM, 4/15/2023]
+  // [2:45 p.m., 12/31/2022]
+  // [14:00, 1/1/2024]
   const dateTimeRegex =
-    /\[(\d{1,2}:\d{2})(?:\s*(a\.?m\.?|p\.?m\.?))?, (\d{1,2}\/\d{1,2}\/\d{4})\]/i;
+    /\[(\d{1,2}:\d{2})(?:\s*(a\.?\s*m\.?|p\.?\s*m\.?))?, (\d{1,2}\/\d{1,2}\/\d{4})\]/i;
+
   const matches = dateTimeRegex.exec(string.replace(/&nbsp;/g, " "));
 
   if (!matches || matches.length < 3) return;
 
   const timePart = matches[1].trim();
-  const ampm = matches[2] ? matches[2].replace(/\s/g, "").toLowerCase() : null;
+
+  const ampm = matches[2]
+    ? matches[2].replace(/\.\s?/g, "").toLowerCase()
+    : null;
+
   const datePart = matches[3];
 
   let day, month, year;
@@ -166,7 +179,8 @@ const handleKeyUp = async (event) => {
   messageBubble.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
 
   const contextMenuButton = await getElementWhenExists(
-    `[aria-label='${chrome.i18n.getMessage("contextMenu")}' i]`
+    `[aria-label='${chrome.i18n.getMessage("contextMenu")}' i]`,
+    messageBubble
   );
 
   contextMenuButton.click();
