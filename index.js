@@ -79,15 +79,12 @@ function getDateFromString(string) {
     ? matches[2].replace(/\.\s?/g, "").toLowerCase()
     : null;
 
-  const datePart = matches[3];
+  const userLanguage = chrome.i18n.getUILanguage();
 
-  let day, month, year;
-
-  if (chrome.i18n.getUILanguage().startsWith("es")) {
-    [day, month, year] = datePart.split("/").map(Number);
-  } else {
-    [month, day, year] = datePart.split("/").map(Number);
-  }
+  const dateParts = new Intl.DateTimeFormat(userLanguage).formatToParts();
+  const day = dateParts.find(part => part.type === 'day').value;
+  const month = dateParts.find(part => part.type === 'month').value;
+  const year = dateParts.find(part => part.type === 'year').value;
 
   let [hours, minutes] = timePart.split(":").map(Number);
 
