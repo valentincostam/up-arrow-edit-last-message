@@ -1,3 +1,6 @@
+> [!WARNING]
+> This repository is no longer maintained since WhatsApp included the keyboard shortcut to edit the last sent message natively in their web app.
+
 # Up Arrow to Edit Last Message on WA Web app
 
 <img align="right" width="48" src="icon48.png" style="margin-left: 20px; margin-bottom: 20px;">
